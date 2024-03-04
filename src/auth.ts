@@ -1,8 +1,16 @@
-import NextAuth from 'next-auth';
+import NextAuth, { User } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
+import { ClientUser } from './app/models/clientUser';
+
+export interface ServerUser extends User {
+  email: string,
+  name: string,
+}
 
 export const {
   handlers: { GET, POST },
+  signIn,
+  signOut,
   auth,
 } = NextAuth({
   trustHost: true,
