@@ -39,6 +39,7 @@ const config: Config = {
           primary: '#17305A',
           "primary-content": '#fff',
           secondary: '#F36E20',
+          "secondary-content": '#eee',
           accent: '#254F91',
         },
       },

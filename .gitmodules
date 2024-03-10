@@ -1,0 +1,3 @@
+[submodule "loader/d4h"]
+	path = loader/d4h
+	url = https://github.com/KingCountySAR/d4h-typescript
