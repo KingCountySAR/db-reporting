@@ -27,15 +27,15 @@ export default async function MainPage() {
             </div>
           </div>
           <div className="stats shadow border-4 border-secondary">
-            <div className="stat place-items-center border-3">
-              <div className="stat-title">Volunteers</div>
-              <div className="stat-value">{format.format(Math.round(missionStats.responders))}</div>
-            </div>
-          </div>
-          <div className="stats shadow border-4 border-secondary">
             <div className="stat place-items-center">
               <div className="stat-title">Hours</div>
               <div className="stat-value">{format.format(Math.round(missionStats.hours))}</div>
+            </div>
+          </div>
+          <div className="stats shadow border-4 border-secondary">
+            <div className="stat place-items-center border-3">
+              <div className="stat-title">Volunteers</div>
+              <div className="stat-value">{format.format(Math.round(missionStats.responders))}</div>
             </div>
           </div>
         </div>
