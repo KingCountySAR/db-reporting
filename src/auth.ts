@@ -1,6 +1,5 @@
 import NextAuth, { User } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
-import { ClientUser } from './app/models/clientUser';
 
 export interface ServerUser extends User {
   email: string,
@@ -21,6 +20,15 @@ export const {
     }),
   ],
   callbacks: {
+    signIn({ account, profile }) {
+      const allowedDomains = (process.env.USER_DOMAINS ?? '').split(',').map(f => f.trim()).filter(f => f);
+      const allowed = account?.provider === 'google' && allowedDomains.includes(profile?.hd ?? '');
+      if (!allowed) {
+        console.log(`User ${profile?.email} in Google domain ${profile?.hd} not allowed`);
+        return false;
+      }
+      return true;
+    },
     authorized({ request, auth }) {
       const { pathname } = request.nextUrl
       return !!auth
