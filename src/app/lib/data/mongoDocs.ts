@@ -1,3 +1,5 @@
+import { ObjectId } from "mongodb";
+
 export interface MissionTimeline {
   status: 'SignedIn'|'SignedOut';
   time: Date;
@@ -6,7 +8,7 @@ export interface MissionTimeline {
 }
 
 export interface MissionRoster {
-  memberId?: string;
+  memberId?: ObjectId;
   refNumber?: string;
   lastName: string;
   firstName: string;
@@ -32,3 +34,15 @@ export interface MissionDoc {
   numResponders: number;
   units: { name: string, hours: number, miles: number }[];
 };
+
+export interface MemberDoc {
+  memberId?: string;
+  dbClass?: string;
+  oldId?: string;
+  firstName: string;
+  lastName: string;
+  refNumber?: string;
+  isOperational: boolean;
+  activeUnits: string[];
+  emails: string[];
+}

@@ -1,10 +1,10 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient, WithId } from 'mongodb';
 import { writeFileSync } from 'fs';
 import { format as formatDate } from 'date-fns';
 
 
-import { Incident, IncidentRoster, Member } from './d4h/lib'
-import { MissionDoc, MissionRoster, MissionTimeline } from '@/app/lib/data/mongoDocs';
+import { Incident, IncidentRoster, Member } from './d4h/lib';
+import { MemberDoc, MissionDoc, MissionRoster, MissionTimeline } from '@/app/lib/data/mongoDocs';
 import { D4HWebClient } from './d4h/lib/src/d4hWebClient';
 import { OPERATIONAL_UNITS, d4h, isSame, shallowClone } from './util';
 
@@ -31,7 +31,7 @@ function getUnitAndRole(d4hRow: IncidentRoster) {
   return { unit: undefined, role: undefined };
 }
 
-async function buildMission(d4hMission: any, members: Record<number, Member>, d4hWebClient: D4HWebClient) {
+async function buildMission(d4hMission: any, members: Record<string, WithId<MemberDoc>>, d4hWebClient: D4HWebClient) {
   let d4hRef = '';
   let d4hTitle = d4hMission.ref_desc.trim();
   const splitTitle = /^((\d{2}-\d{4})|(\d{2}-ES-\d{2,}) )(.*)/.exec(d4hTitle);
@@ -75,14 +75,17 @@ async function buildMission(d4hMission: any, members: Record<number, Member>, d4
     let mongoParticipant: MissionRoster = mongoRosterMap[d4hRow.member.id];
     if (!mongoParticipant) {
       mongoParticipant = {
-        memberId: d4hRow.member.id + '',
         lastName: nameParts[0]?.trim(),
         firstName: nameParts[1]?.trim(),
         timeline: [],
       };
-      const d4hMember = members[d4hRow.member.id];
-      if (d4hMember) {
-        if (d4hMember.ref) mongoParticipant.refNumber = d4hMember.ref;
+
+      const mongoMember = members[d4hRow.member.id + ''];
+      if (mongoMember) {
+        mongoParticipant.memberId = mongoMember._id;
+        if (mongoMember.refNumber) mongoParticipant.refNumber = mongoMember.refNumber;
+      } else {
+        console.log('cant find member ' + d4hRow.member.id)
       }
       mongoRosterMap[d4hRow.member.id] = mongoParticipant;
       mongoMission.roster.push(mongoParticipant);
@@ -125,7 +128,7 @@ async function buildMission(d4hMission: any, members: Record<number, Member>, d4
   mongoMission.numResponders = mongoMission.roster.length;
   mongoMission.hours = mongoMission.roster.reduce((a,c) => a + (c.hours ?? 0), 0);
   mongoMission.miles = mongoMission.roster.reduce((a,c) => a + (c.miles ?? 0), 0);
-  mongoMission.units = Object.values(units).sort((a,b) => a < b ? -1 : a > b ? 1 : 0)
+  mongoMission.units = Object.values(units).sort((a,b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0)
 
   return mongoMission;
 }
@@ -134,12 +137,12 @@ export async function loadMissions(mongo: MongoClient, d4hWebClient: D4HWebClien
   const mongoMissionIds = (await mongo.db().collection("missions").find({ start: { $gte: new Date('2021-01-01') } }).project({ d4hId: 1 }).toArray())
     .reduce((a, c) => ({ ...a, [c.d4hId]: 1 }), {});
 
-  const members = (await d4h<Member>('/team/members')).reduce((a,c) => ({ ...a, [c.id]: c}), {} as Record<number, Member>);
+  const mongoMembers = (await mongo.db().collection<MemberDoc>("members").find({ "memberId": { $exists: true } }).toArray()).reduce((a, c) => ({ ...a, [c.memberId!]: c }), {} as Record<string,WithId<MemberDoc>>)
 
   const d4hMissions = await d4h<Incident>('/team/incidents?after=2021-01-01&include_custom_fields=true&sort=date:desc');
 
   for (const d4hMission of d4hMissions) {
-    const mongoMission = await buildMission(d4hMission, members, d4hWebClient);
+    const mongoMission = await buildMission(d4hMission, mongoMembers, d4hWebClient);
     if (mongoMission) {
       var dirty = true
 

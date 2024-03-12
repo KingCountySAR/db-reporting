@@ -20,10 +20,10 @@ interface TopVolunteer {
 }
 
 interface CenturyClubOptions { start?: Date, end?: Date, unit?: string, sort?: 'count' | 'time' | 'first' };
-interface CenturyClubRow {
+export interface CenturyClubRow {
   _id: MemberNameAndId;
   first: Date;
-  time: Date;
+  time?: Date;
   count: number;
 }
 
@@ -69,17 +69,26 @@ export async function getCenturyClub(n: number = 100, options?: CenturyClubOptio
     {
       $group: {
         _id: "$_id",
+        memberId: { $max: "$_id.memberId" },
         first: { $min: "$missionStarts.start" },
         time: { $max: "$missionStarts.start" },
         count: { $max: "$totalCount" }, // Every row in the group should have same value for $totalCount
       },
     },
-    { $match: { "count": { $gte: 100 } } },
-    { $sort: { count: -1, time: 1 } },
+    { $match: { "count": { $gte: n - 5 } } },
+    { $lookup: {
+          from: "members",
+          localField: "memberId",
+          foreignField: "_id",
+          as: "member",
+        },
+    },
+    { $match: { "member.activeUnits": unit } },
+    { $sort: { time: -1 } },
   ];
   const cursor = await client.db().collection<MissionDoc>("missions").aggregate<CenturyClubRow>(pipeline);
 
-  return (await cursor.toArray());
+  return ((await cursor.toArray()).map(row => ({ ...row, time: row.count >= n ? row.time : undefined })));
 }
 
 export async function getTopVolunteers(options?: TopVolunteerOptions) {

@@ -3,6 +3,7 @@ import '@/app/ui/global.css';
 import { auth } from 'auth';
 import { AppProvider } from '@/app/lib/appContext';
 import { ClientUser } from '@/app/models/clientUser';
+import { OPERATIONAL_UNITS } from '../../loader/util';
 
 export default async function RootLayout({children}: {children: React.ReactNode}) {
   const session = await auth();
@@ -18,7 +19,7 @@ export default async function RootLayout({children}: {children: React.ReactNode}
   return (
     <html lang="en">
       <body>
-        <AppProvider user={user}>
+        <AppProvider user={user} unitList={Object.values(OPERATIONAL_UNITS).sort()}>
           {children}
         </AppProvider>
       </body>

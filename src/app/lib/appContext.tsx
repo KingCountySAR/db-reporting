@@ -4,14 +4,15 @@ import React, { createContext, useContext } from 'react';
 import { ClientUser } from '@/app/models/clientUser';
 
 interface AppContextProps {
-  user?: ClientUser
+  user?: ClientUser,
+	unitList: string[],
 }
 
 const AppContext = createContext<AppContextProps | undefined>(undefined);
 
-export function AppProvider({children, user }: { children: React.ReactNode, user?: ClientUser|undefined }) {
+export function AppProvider({children, user, unitList }: { children: React.ReactNode, user?: ClientUser|undefined, unitList: string[] }) {
   return (
-		<AppContext.Provider value={{ user }}>
+		<AppContext.Provider value={{ user, unitList }}>
 			{children}
 		</AppContext.Provider>
 	);
